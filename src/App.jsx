@@ -11,7 +11,7 @@ const SE = {
 function pascoa(y) {
   const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
     f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
-    h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+
     l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
     mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1;
   return new Date(y,mes-1,dia);
@@ -34,7 +34,9 @@ function calcMes(ano, mes) {
     "11-20":"Consciência Negra","12-25":"Natal",
   };
   const isFer = k => !!FERIADOS[k];
-  const qc = toK(addD(p,-46)); // Quarta de Cinzas
+  const qc = toK(addD(p,-46)); // Quarta-feira de Cinzas
+  const tercaCarnaval = toK(addD(p,-47)); // Terça-feira de Carnaval
+  const segundaCarnaval = toK(addD(p,-48)); // Segunda-feira de Carnaval
  
   const total = new Date(ano, mes, 0).getDate();
   const days = [];
@@ -55,24 +57,77 @@ function calcMes(ano, mes) {
       valor=0; tipo="feriado"; label=FERIADOS[k];
     } else if (mes===7&&dia===9) {
       valor=0.5; tipo="meio"; label="Rev. Constitucionalista";
-    } else if (k===qc) {
-      valor=0.5; tipo="meio"; label="Quarta-feira de Cinzas";
-    } else {
-      // emendas
-      const dA=new Date(ano,mes-1,dia-1), dP=new Date(ano,mes-1,dia+1);
-      const kA=toK(dA), kP=toK(dP);
-      const ferQui=isFer(kA)&&dA.getDay()===4;
-      const ferTer=isFer(kP)&&dP.getDay()===2;
-      if (dow===5&&ferQui) { valor=0.5; tipo="emenda"; label=`Emenda (${FERIADOS[kA]})`; }
-      else if (dow===1&&ferTer) { valor=0.5; tipo="emenda"; label=`Emenda (${FERIADOS[kP]})`; }
-      else if (mes===12) {
-        if (dia===23) { valor=0.5; tipo="meio"; label="Pré-véspera de Natal"; }
-        else if (dia===24) { valor=0.5; tipo="meio"; label="Véspera de Natal"; }
-        else if (dia>=26&&dia<=29) { valor=0.75; tipo="recesso"; label="Recesso Natal/Ano Novo"; }
-        else if (dia===30) { valor=0.5; tipo="meio"; label="Pré-véspera de Ano Novo"; }
-        else if (dia===31) { valor=0.5; tipo="meio"; label="Véspera de Ano Novo"; }
-      }
+  else if (k===segundaCarnaval) {
+  valor = 0;
+  tipo = "feriado";
+  label = "Segunda-feira de Carnaval";
+}
+  else if (k===tercaCarnaval) {
+  valor = 0;
+  tipo = "feriado";
+  label = "Terça-feira de Carnaval";
+}
+  else if (k===qc) {
+  valor = 0.5;
+  tipo = "meio";
+  label = "Quarta-feira de Cinzas";
+}
+  else {
+  // emendas
+  const dA = new Date(ano, mes-1, dia-1);
+  const dP = new Date(ano, mes-1, dia+1);
+
+  const kA = toK(dA);
+  const kP = toK(dP);
+
+  const ferQui = isFer(kA) && dA.getDay()===4;
+  const ferTer = isFer(kP) && dP.getDay()===2;
+
+  if (dow===5 && ferQui) {
+    valor = 0.5;
+    tipo = "emenda";
+    label = `Emenda (${FERIADOS[kA]})`;
+  }
+
+  else if (dow===1 && ferTer) {
+    valor = 0.5;
+    tipo = "emenda";
+    label = `Emenda (${FERIADOS[kP]})`;
+  }
+
+  else if (mes===12) {
+
+    if (dia===23) {
+      valor = 0.5;
+      tipo = "meio";
+      label = "Pré-véspera de Natal";
     }
+
+    else if (dia===24) {
+      valor = 0.5;
+      tipo = "meio";
+      label = "Véspera de Natal";
+    }
+
+    else if (dia>=26 && dia<=29) {
+      valor = 0.75;
+      tipo = "recesso";
+      label = "Recesso Natal/Ano Novo";
+    }
+
+    else if (dia===30) {
+      valor = 0.75;
+      tipo = "recesso";
+      label = "Pré-véspera de Ano Novo";
+    }
+
+    else if (dia===31) {
+      valor = 0;
+      tipo = "feriado";
+      label = "Véspera de Ano Novo";
+    }
+  }
+}
  
     days.push({dia, dow, fds, valor, tipo, label, k});
   }
