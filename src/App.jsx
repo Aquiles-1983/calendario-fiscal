@@ -268,7 +268,7 @@ function Modal({initialIdx, onClose}){
 
 // ── App ────────────────────────────────────────────────────────────────────────
 export default function App(){
-  const [sortRow,setSortRow]   = useState(null);
+  const [sortCol,setSortCol]   = useState(null);
   const [sortDir,setSortDir]   = useState(1);
   const [hoverCol,setHoverCol] = useState(null);
   const [hoverRow,setHoverRow] = useState(null);
@@ -276,31 +276,40 @@ export default function App(){
   const [busca,setBusca]       = useState("");
   const [modalIdx,setModalIdx] = useState(null);
 
-  const colsFY = useMemo(()=>
-    fyFiltro==="Todos" ? DATA : DATA.filter(r=>r.fy===fyFiltro),
-    [fyFiltro]);
+  // Linhas = FY filtrados
+  const rowsFY = useMemo(()=>{
+    let base = fyFiltro==="Todos" ? DATA : DATA.filter(r=>r.fy===fyFiltro);
+    if(busca.trim()){
+      const q=busca.trim().toLowerCase();
+      base=base.filter(r=>
+        r.fy.toLowerCase().includes(q)||
+        MESES.some(m=>String(r[m]).includes(q))||
+        String(r.T).includes(q)
+      );
+    }
+    return base;
+  },[fyFiltro,busca]);
 
-  const rowsMes = useMemo(()=>{
-    if(!busca.trim()) return MESES;
-    const q=busca.trim().toLowerCase();
-    return MESES.filter(m=>
-      m.toLowerCase().includes(q)||
-      colsFY.some(r=>String(r[m]).includes(q))
-    );
-  },[busca,colsFY]);
+  // Colunas = meses (sempre todos)
+  const colsMes = MESES;
 
-  const sortedCols = useMemo(()=>{
-    if(!sortRow) return colsFY;
-    return [...colsFY].sort((a,b)=>(a[sortRow]-b[sortRow])*sortDir);
-  },[colsFY,sortRow,sortDir]);
+  // Ordenar linhas (FY) pelo valor de um mês clicado
+  const sortedRows = useMemo(()=>{
+    if(!sortCol) return rowsFY;
+    return [...rowsFY].sort((a,b)=>{
+      const va = sortCol==="T" ? a.T : a[sortCol];
+      const vb = sortCol==="T" ? b.T : b[sortCol];
+      return (va-vb)*sortDir;
+    });
+  },[rowsFY,sortCol,sortDir]);
 
-  const handleSortRow = mes=>{
-    if(sortRow===mes) setSortDir(d=>-d);
-    else{ setSortRow(mes); setSortDir(1); }
+  const handleSortCol = col=>{
+    if(sortCol===col) setSortDir(d=>-d);
+    else{ setSortCol(col); setSortDir(1); }
   };
 
-  const avgMes = mes => colsFY.length
-    ? colsFY.reduce((s,r)=>s+r[mes],0)/colsFY.length : 0;
+  const avgCol = col => rowsFY.length
+    ? rowsFY.reduce((s,r)=>s+(col==="T"?r.T:r[col]),0)/rowsFY.length : 0;
 
   return(
     <div style={{minHeight:"100vh",background:"#F0F4FA",
@@ -377,122 +386,135 @@ export default function App(){
         </div>
       </div>
 
-      {/* TABELA: linhas = meses, colunas = FY */}
+      {/* TABELA: linhas = FY, colunas = Meses */}
       <div style={{padding:"18px 28px 36px"}}>
-        <div style={{overflowX:"auto",borderRadius:10,
-          boxShadow:"0 4px 20px rgba(0,0,0,0.08)",border:"1px solid #D8E4F0"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",
-            fontSize:12.5,fontFamily:"inherit",background:"#fff"}}>
-            <thead>
-              <tr style={{background:SE.blue}}>
-                <th style={{padding:"11px 16px",textAlign:"left",color:"#fff",
-                  fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
-                  position:"sticky",left:0,background:SE.blue,zIndex:3,minWidth:64,
-                  borderRight:"2px solid rgba(255,255,255,0.15)"}}>Mês</th>
-                {sortedCols.map(r=>(
-                  <th key={r.fy}
-                    onMouseEnter={()=>setHoverCol(r.fy)}
-                    onMouseLeave={()=>setHoverCol(null)}
-                    style={{padding:"11px 6px",textAlign:"center",minWidth:58,
-                      color:hoverCol===r.fy?SE.yellow:"#fff",fontSize:11,
-                      letterSpacing:"0.06em",fontWeight:700,
-                      background:hoverCol===r.fy?SE.blueDk:SE.blue,
-                      transition:"background .15s"}}>
-                    {r.fy}
+        {sortedRows.length===0?(
+          <div style={{textAlign:"center",padding:"48px 0",color:SE.grayMd,fontSize:14}}>
+            Nenhum resultado encontrado.
+          </div>
+        ):(
+          <div style={{overflowX:"auto",borderRadius:10,
+            boxShadow:"0 4px 20px rgba(0,0,0,0.08)",border:"1px solid #D8E4F0"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",
+              fontSize:12.5,fontFamily:"inherit",background:"#fff"}}>
+              <thead>
+                <tr style={{background:SE.blue}}>
+                  {/* FY fixo */}
+                  <th style={{padding:"11px 16px",textAlign:"left",color:"#fff",
+                    fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
+                    position:"sticky",left:0,background:SE.blue,zIndex:3,minWidth:72,
+                    borderRight:"2px solid rgba(255,255,255,0.15)"}}>FY</th>
+                  {/* Colunas = meses */}
+                  {colsMes.map(m=>(
+                    <th key={m} className="th-s"
+                      onClick={()=>handleSortCol(m)}
+                      onMouseEnter={()=>setHoverCol(m)}
+                      onMouseLeave={()=>setHoverCol(null)}
+                      style={{padding:"11px 4px",textAlign:"center",minWidth:52,
+                        color:sortCol===m?SE.yellow:hoverCol===m?"rgba(255,255,255,0.8)":"#fff",
+                        fontSize:10,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,
+                        background:sortCol===m?SE.blueDk:SE.blue}}>
+                      {m}{sortCol===m?(sortDir===1?" ↑":" ↓"):""}
+                    </th>
+                  ))}
+                  {/* Total */}
+                  <th className="th-s"
+                    onClick={()=>handleSortCol("T")}
+                    style={{padding:"11px 12px",textAlign:"center",minWidth:68,
+                      color:sortCol==="T"?SE.yellow:"#fff",fontSize:10,
+                      letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,
+                      background:sortCol==="T"?SE.blueDk:SE.blue,
+                      borderLeft:"2px solid rgba(255,255,255,0.15)"}}>
+                    Total{sortCol==="T"?(sortDir===1?" ↑":" ↓"):""}
                   </th>
-                ))}
-                <th style={{padding:"11px 10px",textAlign:"center",minWidth:60,
-                  color:"#fff",fontSize:10,letterSpacing:"0.08em",
-                  textTransform:"uppercase",fontWeight:700,background:SE.blue,
-                  borderLeft:"2px solid rgba(255,255,255,0.15)"}}>Média</th>
-              </tr>
-            </thead>
+                </tr>
+              </thead>
 
-            <tbody>
-              {rowsMes.map((mes,ri)=>{
-                const isHR  = hoverRow===mes;
-                const isSrt = sortRow===mes;
-                return(
-                  <tr key={mes} className="row"
-                    onMouseEnter={()=>setHoverRow(mes)}
-                    onMouseLeave={()=>setHoverRow(null)}
-                    style={{background:ri%2===0?"#fff":"#F7FAFF",
-                      borderBottom:"1px solid #E8EEF8"}}>
-
-                    <td className="th-s" onClick={()=>handleSortRow(mes)}
-                      style={{padding:"8px 12px",fontWeight:700,
-                        color:isSrt||isHR?SE.blue:SE.gray,fontSize:13,
+              <tbody>
+                {sortedRows.map((row,ri)=>{
+                  const isHR=hoverRow===row.fy;
+                  return(
+                    <tr key={row.fy} className="row"
+                      onMouseEnter={()=>setHoverRow(row.fy)}
+                      onMouseLeave={()=>setHoverRow(null)}
+                      style={{background:ri%2===0?"#fff":"#F7FAFF",
+                        borderBottom:"1px solid #E8EEF8"}}>
+                      {/* FY */}
+                      <td style={{padding:"8px 16px",fontWeight:700,
+                        color:isHR?SE.blue:SE.gray,fontSize:13,
                         position:"sticky",left:0,zIndex:1,
                         background:isHR?"#EBF2FF":ri%2===0?"#fff":"#F7FAFF",
-                        borderRight:"2px solid #E0E8F5",whiteSpace:"nowrap",
-                        cursor:"pointer",userSelect:"none",transition:"color .15s"}}>
-                      {mes}
-                      {isSrt&&<span style={{marginLeft:4,fontSize:10,color:SE.grayMd}}>
-                        {sortDir===1?"↑":"↓"}
-                      </span>}
-                    </td>
+                        borderRight:"2px solid #E0E8F5",
+                        whiteSpace:"nowrap",transition:"color .15s"}}>
+                        {row.fy}
+                      </td>
+                      {/* Células por mês */}
+                      {colsMes.map(m=>{
+                        const v=row[m];
+                        const cellIdx=ALL_CELLS.findIndex(c=>c.fy===row.fy&&c.mes===m);
+                        const isColHL=hoverCol===m;
+                        return(
+                          <td key={m} style={{padding:"5px 3px",textAlign:"center",
+                            background:isColHL?"#EBF2FF":"transparent"}}>
+                            <div className="pip"
+                              onClick={()=>setModalIdx(cellIdx)}
+                              title="Ver calendário"
+                              style={{display:"inline-flex",alignItems:"center",
+                                justifyContent:"center",width:40,height:26,
+                                borderRadius:5,background:"transparent",
+                                color:SE.gray,fontWeight:500,fontSize:12.5,
+                                border:"1px solid #D8E4F0"}}>
+                              {fmt(v)}
+                            </div>
+                          </td>
+                        );
+                      })}
+                      {/* Total da linha */}
+                      <td style={{padding:"5px 8px",textAlign:"center",
+                        borderLeft:"2px solid #E0E8F5"}}>
+                        <div style={{display:"inline-flex",alignItems:"center",
+                          justifyContent:"center",width:52,height:26,
+                          borderRadius:5,background:"transparent",
+                          color:SE.gray,fontWeight:700,fontSize:13,
+                          border:"1px solid #D8E4F0"}}>
+                          {fmt(row.T)}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
 
-                    {sortedCols.map(r=>{
-                      const v=r[mes];
-                      const cellIdx=ALL_CELLS.findIndex(c=>c.fy===r.fy&&c.mes===mes);
-                      const isColHL=hoverCol===r.fy;
-                      return(
-                        <td key={r.fy} style={{padding:"6px 4px",textAlign:"center",
-                          background:isColHL?"#EBF2FF":"transparent"}}>
-                          <div className="pip"
-                            onClick={()=>setModalIdx(cellIdx)}
-                            title="Ver calendário"
-                            style={{display:"inline-flex",alignItems:"center",
-                              justifyContent:"center",width:42,height:26,
-                              borderRadius:5,background:"transparent",
-                              color:SE.gray,fontWeight:500,fontSize:12.5,
-                              border:"1px solid #D8E4F0"}}>
-                            {fmt(v)}
-                          </div>
-                        </td>
-                      );
-                    })}
-
-                    <td style={{padding:"6px 8px",textAlign:"center",
-                      borderLeft:"2px solid #E0E8F5"}}>
-                      <div style={{display:"inline-flex",alignItems:"center",
-                        justifyContent:"center",width:46,height:26,
-                        borderRadius:5,background:"transparent",
-                        color:SE.grayMd,fontWeight:600,fontSize:12,
-                        border:"1px solid #D8E4F0"}}>
-                        {avgMes(mes).toFixed(1)}
-                      </div>
+              {/* Rodapé médias */}
+              {sortedRows.length>1&&(
+                <tfoot>
+                  <tr style={{background:SE.blue,borderTop:`3px solid ${SE.blueDk}`}}>
+                    <td style={{padding:"9px 16px",color:"#fff",fontSize:10,fontWeight:700,
+                      letterSpacing:"0.1em",textTransform:"uppercase",
+                      position:"sticky",left:0,background:SE.blue,zIndex:1,
+                      borderRight:"2px solid rgba(255,255,255,0.15)"}}>Média</td>
+                    {colsMes.map(m=>(
+                      <td key={m} style={{padding:"9px 3px",textAlign:"center"}}>
+                        <span style={{color:"#fff",fontSize:11,fontWeight:600}}>
+                          {avgCol(m).toFixed(1)}
+                        </span>
+                      </td>
+                    ))}
+                    <td style={{padding:"9px 8px",textAlign:"center",
+                      borderLeft:"2px solid rgba(255,255,255,0.15)"}}>
+                      <span style={{color:"#fff",fontSize:12,fontWeight:700}}>
+                        {avgCol("T").toFixed(2)}
+                      </span>
                     </td>
                   </tr>
-                );
-              })}
-
-              {/* Linha Total */}
-              <tr style={{background:SE.blue,borderTop:`3px solid ${SE.blueDk}`}}>
-                <td style={{padding:"9px 12px",color:"#fff",fontSize:10,fontWeight:700,
-                  letterSpacing:"0.1em",textTransform:"uppercase",
-                  position:"sticky",left:0,background:SE.blue,zIndex:1,
-                  borderRight:"2px solid rgba(255,255,255,0.15)"}}>Total</td>
-                {sortedCols.map(r=>(
-                  <td key={r.fy} style={{padding:"9px 4px",textAlign:"center"}}>
-                    <span style={{color:"#fff",fontSize:12,fontWeight:700}}>
-                      {fmt(r.T)}
-                    </span>
-                  </td>
-                ))}
-                <td style={{padding:"9px 8px",textAlign:"center",
-                  borderLeft:"2px solid rgba(255,255,255,0.15)"}}>
-                  <span style={{color:"#fff",fontSize:12,fontWeight:700}}>
-                    {avg(colsFY,"T").toFixed(2)}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        )}
 
         <div style={{marginTop:10,textAlign:"center",fontSize:11,color:SE.grayMd}}>
-          Clique em qualquer célula para abrir o calendário · Use ‹ › para navegar entre meses · Clique no mês para ordenar
+          Clique em qualquer célula para abrir o calendário · Use ‹ › para navegar · Clique no cabeçalho do mês para ordenar
         </div>
       </div>
     </div>
