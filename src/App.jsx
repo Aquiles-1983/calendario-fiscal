@@ -1,206 +1,140 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import{useState,useMemo,useRef,useEffect}from"react";
+const B="#0057A8",BD="#003E7E",R="#E8002D",G="#00A651",O="#FF6600",Y="#FFD100",GR="#231F20",GM="#58595B";
+const D=[
+{fy:"FY25",n:2024,Abr:22,Mai:20.5,Jun:20,Jul:22.5,Ago:22,Set:21,Out:23,Nov:19,Dez:17.25,Jan:22,Fev:20,Mar:18.5,T:247.75},
+{fy:"FY26",n:2025,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:22,T:245.5},
+{fy:"FY27",n:2026,Abr:19.5,Mai:20,Jun:20.5,Jul:22.5,Ago:21,Set:21,Out:21,Nov:19,Dez:18.25,Jan:19,Fev:17.5,Mar:22,T:241.25},
+{fy:"FY28",n:2027,Abr:21,Mai:19.5,Jun:22,Jul:21.5,Ago:22,Set:20.5,Out:19.5,Nov:19.5,Dez:18.5,Jan:19.5,Fev:19,Mar:22.5,T:245},
+{fy:"FY29",n:2028,Abr:18,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:19.5,Out:20.5,Nov:18.5,Dez:17,Jan:20.5,Fev:17.5,Mar:21,T:239},
+{fy:"FY30",n:2029,Abr:20.5,Mai:21,Jun:20.5,Jul:21.5,Ago:23,Set:19,Out:22,Nov:18,Dez:16.75,Jan:21,Fev:20,Mar:18.5,T:241.75},
+{fy:"FY31",n:2030,Abr:21,Mai:22,Jun:18.5,Jul:22.5,Ago:22,Set:21,Out:23,Nov:19,Dez:17.25,Jan:22,Fev:17.5,Mar:21,T:246.75},
+{fy:"FY32",n:2031,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:22,T:245.5},
+];
+const MS=["Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez","Jan","Fev","Mar"];
+const MN={Abr:4,Mai:5,Jun:6,Jul:7,Ago:8,Set:9,Out:10,Nov:11,Dez:12,Jan:1,Fev:2,Mar:3};
+const MNM={1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"};
+const DW=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const FYS=D.map(r=>r.fy);
+const ALL=D.flatMap(r=>MS.map(m=>({fy:r.fy,n:r.n,m,v:r[m]})));
+const q1=r=>r.Abr+r.Mai+r.Jun,q2=r=>r.Jul+r.Ago+r.Set,q3=r=>r.Out+r.Nov+r.Dez,q4=r=>r.Jan+r.Fev+r.Mar;
+const EX=[{k:"Q1",fn:q1,s:1},{k:"Q2",fn:q2},{k:"Q3",fn:q3},{k:"Q4",fn:q4},{k:"H1",fn:r=>q1(r)+q2(r),s:1},{k:"H2",fn:r=>q3(r)+q4(r)}];
+const f2=v=>Number.isInteger(v)?String(v):parseFloat(v.toFixed(2)).toString();
+const fP=v=>v===null?"—":`${v>=0?"+":""}${v.toFixed(1)}%`;
+const fA=v=>v===null?"—":`${v>=0?"+":""}${f2(parseFloat(v.toFixed(2)))}`;
+const yC=v=>v===null?GM:v>0?G:v<0?R:GM;
+function gV(r,k){const e=EX.find(x=>x.k===k);return e?e.fn(r):k==="T"?r.T:r[k];}
 
-const SE = {
-  red:"#E8002D", pink:"#E8002D",
-  blue:"#0057A8", blueLt:"#0091DA", blueDk:"#003E7E",
-  green:"#00A651", yellow:"#FFD100", orange:"#FF6600",
-  gray:"#231F20", grayMd:"#58595B",
-};
-
-function pascoa(y) {
+function pascoa(y){
   const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
-    f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
-    h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
-    l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+    f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,
+    i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,
+    m=Math.floor((a+11*h+22*l)/451),
     mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1;
   return new Date(y,mes-1,dia);
 }
 
-function calcMes(ano, mes) {
-  const p = pascoa(ano);
-  const addD = (d,n)=>{ const r=new Date(d); r.setDate(r.getDate()+n); return r; };
-  const toK = d=>`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-  const FERIADOS = {
-    "01-01":"Confraternização Universal","01-25":"Aniversário de São Paulo",
-    [toK(addD(p,-48))]:"Segunda de Carnaval",[toK(addD(p,-47))]:"Terça de Carnaval",
-    [toK(addD(p,-2))]:"Sexta-feira Santa",[toK(p)]:"Páscoa",
-    "04-21":"Tiradentes","05-01":"Dia do Trabalho",
-    [toK(addD(p,60))]:"Corpus Christi",
-    "09-07":"Independência do Brasil","10-12":"N. Sra. Aparecida",
-    "11-02":"Finados","11-15":"Proclamação da República",
-    "11-20":"Consciência Negra","12-25":"Natal",
+function calcMes(ano,mes){
+  const p=pascoa(ano);
+  const aD=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+  const tK=d=>`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const FER={
+    "01-01":"Confraternização","01-25":"Aniv.SP",
+    [tK(aD(p,-48))]:"2ªCarnaval",[tK(aD(p,-47))]:"3ªCarnaval",
+    [tK(aD(p,-2))]:"6ªSanta",[tK(p)]:"Páscoa",
+    "04-21":"Tiradentes","05-01":"Trabalho",
+    [tK(aD(p,60))]:"Corpus","09-07":"Independência",
+    "10-12":"N.Sra.Ap","11-02":"Finados",
+    "11-15":"República","11-20":"Consciência","12-25":"Natal",
   };
-  const isFer = k => !!FERIADOS[k];
-  const qc = toK(addD(p,-46));
-  const total = new Date(ano, mes, 0).getDate();
-  const days = [];
-  for (let dia=1; dia<=total; dia++) {
-    const d = new Date(ano, mes-1, dia);
-    const dow = d.getDay();
-    const fds = dow===0||dow===6;
-    const k = `${String(mes).padStart(2,"0")}-${String(dia).padStart(2,"0")}`;
-    let valor=1, tipo="util", label="";
-    if (fds) { valor=0; tipo="fds"; }
-    else if (isFer(k)) { valor=0; tipo="feriado"; label=FERIADOS[k]; }
-    else if (mes===7&&dia===9) { valor=0.5; tipo="meio"; label="Rev. Constitucionalista"; }
-    else if (k===qc) { valor=0.5; tipo="meio"; label="Quarta-feira de Cinzas"; }
-    else {
-      const dA=new Date(ano,mes-1,dia-1), dP=new Date(ano,mes-1,dia+1);
-      const kA=toK(dA), kP=toK(dP);
-      if (dow===5&&isFer(kA)&&dA.getDay()===4) { valor=0.5; tipo="emenda"; label=`Emenda (${FERIADOS[kA]})`; }
-      else if (dow===1&&isFer(kP)&&dP.getDay()===2) { valor=0.5; tipo="emenda"; label=`Emenda (${FERIADOS[kP]})`; }
-      else if (mes===12) {
-        if (dia===23||dia===24||dia===31) { valor=0.5; tipo="meio"; label=dia===23?"Pré-véspera de Natal":dia===24?"Véspera de Natal":"Véspera de Ano Novo"; }
-        else if (dia>=26&&dia<=30) { valor=0.25; tipo="quarto"; label="Recesso Natal/Ano Novo"; }
-      }
+  const iF=k=>!!FER[k];
+  const qc=tK(aD(p,-46));
+  const tot=new Date(ano,mes,0).getDate();
+  const days=[];
+  for(let d=1;d<=tot;d++){
+    const dt=new Date(ano,mes-1,d),dow=dt.getDay(),fds=dow===0||dow===6;
+    const k=`${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const kA=tK(new Date(ano,mes-1,d-1)),kP=tK(new Date(ano,mes-1,d+1));
+    const dA=new Date(ano,mes-1,d-1),dP=new Date(ano,mes-1,d+1);
+    let v=1,tp="u",lb="";
+    if(fds){v=0;tp="f";}
+    else if(iF(k)){v=0;tp="h";lb=FER[k];}
+    else if(mes===7&&d===9){v=0.5;tp="m";lb="Rev.Const";}
+    else if(k===qc){v=0.5;tp="m";lb="4ªCinzas";}
+    else if(dow===5&&iF(kA)&&dA.getDay()===4){v=0.5;tp="e";lb="Emenda";}
+    else if(dow===1&&iF(kP)&&dP.getDay()===2){v=0.5;tp="e";lb="Emenda";}
+    else if(mes===12){
+      if(d===23||d===24||d===31){v=0.5;tp="m";lb=d===23?"Pré-Natal":d===24?"Vésp.Natal":"Vésp.ANV";}
+      else if(d>=26&&d<=30){v=0.25;tp="q";lb="Recesso";}
     }
-    days.push({dia,dow,fds,valor,tipo,label});
+    days.push({d,dow,fds,v,tp,lb});
   }
   return days;
 }
 
-const DATA = [
-  {fy:"FY26",afn:2025,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:22,T:245.5},
-  {fy:"FY27",afn:2026,Abr:19.5,Mai:20,Jun:20.5,Jul:22.5,Ago:21,Set:21,Out:21,Nov:19,Dez:18.25,Jan:19,Fev:17.5,Mar:22,T:241.25},
-  {fy:"FY28",afn:2027,Abr:21,Mai:19.5,Jun:22,Jul:21.5,Ago:22,Set:20.5,Out:19.5,Nov:19.5,Dez:18.5,Jan:19.5,Fev:19,Mar:22.5,T:245.0},
-  {fy:"FY29",afn:2028,Abr:18,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:19.5,Out:20.5,Nov:18.5,Dez:17.0,Jan:20.5,Fev:17.5,Mar:21,T:239.0},
-  {fy:"FY30",afn:2029,Abr:20.5,Mai:21,Jun:20.5,Jul:21.5,Ago:23,Set:19,Out:22,Nov:18.0,Dez:16.75,Jan:21,Fev:20,Mar:18.5,T:241.75},
-  {fy:"FY31",afn:2030,Abr:21,Mai:22,Jun:18.5,Jul:22.5,Ago:22,Set:21,Out:23,Nov:19,Dez:17.25,Jan:22,Fev:17.5,Mar:21,T:246.75},
-  {fy:"FY32",afn:2031,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:22,T:245.5},
-  {fy:"FY33",afn:2032,Abr:21,Mai:19.5,Jun:22,Jul:21.5,Ago:22,Set:20.5,Out:19.5,Nov:19.5,Dez:18.5,Jan:19.5,Fev:19,Mar:21.5,T:244.0},
-  {fy:"FY34",afn:2033,Abr:18.5,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:21,Out:20,Nov:19.5,Dez:17.75,Jan:21,Fev:17.5,Mar:23,T:244.75},
-  {fy:"FY35",afn:2034,Abr:18,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:19.5,Out:20.5,Nov:18.5,Dez:17.0,Jan:20.5,Fev:17.5,Mar:21,T:239.0},
-  {fy:"FY36",afn:2035,Abr:20.5,Mai:20.5,Jun:21,Jul:21.5,Ago:23,Set:19,Out:22,Nov:18.0,Dez:16.75,Jan:21,Fev:18.5,Mar:21,T:242.75},
-  {fy:"FY37",afn:2036,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:22,T:245.5},
-  {fy:"FY38",afn:2037,Abr:19.5,Mai:20,Jun:20.5,Jul:22.5,Ago:21,Set:21,Out:21,Nov:19,Dez:18.25,Jan:19,Fev:20,Mar:20.5,T:242.25},
-  {fy:"FY39",afn:2038,Abr:20,Mai:21,Jun:20.5,Jul:21.5,Ago:22,Set:20.5,Out:19.5,Nov:19.5,Dez:18.5,Jan:19.5,Fev:17.5,Mar:23,T:243.0},
-  {fy:"FY40",afn:2039,Abr:18.5,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:21,Out:20,Nov:19.5,Dez:17.75,Jan:21,Fev:18.5,Mar:21,T:243.75},
-  {fy:"FY41",afn:2040,Abr:20.5,Mai:21,Jun:20.5,Jul:21.5,Ago:23,Set:19,Out:22,Nov:18.0,Dez:16.75,Jan:21,Fev:20,Mar:18.5,T:241.75},
-  {fy:"FY42",afn:2041,Abr:21,Mai:22,Jun:18.5,Jul:22.5,Ago:22,Set:21,Out:23,Nov:19,Dez:17.25,Jan:22,Fev:17.5,Mar:21,T:246.75},
-  {fy:"FY43",afn:2042,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:21,T:244.5},
-  {fy:"FY44",afn:2043,Abr:20.5,Mai:18.5,Jun:22,Jul:22.5,Ago:21,Set:21,Out:21,Nov:19,Dez:18.25,Jan:19,Fev:20,Mar:21.5,T:244.25},
-  {fy:"FY45",afn:2044,Abr:18.5,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:21,Out:20,Nov:19.5,Dez:17.75,Jan:21,Fev:17.5,Mar:23,T:244.75},
-  {fy:"FY46",afn:2045,Abr:18,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:19.5,Out:20.5,Nov:18.5,Dez:17.0,Jan:20.5,Fev:17.5,Mar:21,T:239.0},
-  {fy:"FY47",afn:2046,Abr:20.5,Mai:20.5,Jun:21,Jul:21.5,Ago:23,Set:19,Out:22,Nov:18.0,Dez:16.75,Jan:21,Fev:17.5,Mar:21,T:241.75},
-  {fy:"FY48",afn:2047,Abr:21,Mai:22,Jun:18.5,Jul:22.5,Ago:22,Set:21,Out:23,Nov:19,Dez:17.25,Jan:22,Fev:17.5,Mar:22,T:247.75},
-  {fy:"FY49",afn:2048,Abr:19.5,Mai:20,Jun:20.5,Jul:22.5,Ago:21,Set:21,Out:21,Nov:19,Dez:18.25,Jan:19,Fev:20,Mar:20.5,T:242.25},
-  {fy:"FY50",afn:2049,Abr:20,Mai:21,Jun:20.5,Jul:21.5,Ago:22,Set:20.5,Out:19.5,Nov:19.5,Dez:18.5,Jan:19.5,Fev:17.5,Mar:23,T:243.0},
-  {fy:"FY51",afn:2050,Abr:18.5,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:21,Out:20,Nov:19.5,Dez:17.75,Jan:21,Fev:17.5,Mar:22,T:243.75},
-  {fy:"FY52",afn:2051,Abr:19,Mai:22,Jun:20.5,Jul:21,Ago:23,Set:19.5,Out:20.5,Nov:18.5,Dez:17.0,Jan:20.5,Fev:21,Mar:18.5,T:241.0},
-  {fy:"FY53",afn:2052,Abr:21,Mai:22,Jun:18.5,Jul:22.5,Ago:22,Set:21,Out:23,Nov:19,Dez:17.25,Jan:22,Fev:17.5,Mar:21,T:246.75},
-  {fy:"FY54",afn:2053,Abr:20,Mai:20.5,Jun:19.5,Jul:22.5,Ago:21,Set:22,Out:23,Nov:18.5,Dez:18.5,Jan:20.5,Fev:17.5,Mar:21,T:244.5},
-  {fy:"FY55",afn:2054,Abr:20.5,Mai:18.5,Jun:22,Jul:22.5,Ago:21,Set:21,Out:21,Nov:19,Dez:18.25,Jan:19,Fev:20,Mar:20.5,T:243.25},
-  {fy:"FY56",afn:2055,Abr:20,Mai:21,Jun:20.5,Jul:21.5,Ago:22,Set:20.5,Out:19.5,Nov:19.5,Dez:18.5,Jan:19.5,Fev:18.5,Mar:22,T:243.0},
-];
-
-const MESES    = ["Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez","Jan","Fev","Mar"];
-const MES_NUM  = {Abr:4,Mai:5,Jun:6,Jul:7,Ago:8,Set:9,Out:10,Nov:11,Dez:12,Jan:1,Fev:2,Mar:3};
-const MES_NOME = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",
-                  7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"};
-const DOW_NAMES = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-const FYS = DATA.map(r=>r.fy);
-
-const ALL_CELLS = DATA.flatMap(row=>
-  MESES.map(m=>({fy:row.fy, afn:row.afn, mes:m, val:row[m]}))
-);
-
-const fmt = v => Number.isInteger(v)?String(v):parseFloat(v.toFixed(2)).toString();
-const avg = (arr,col) => arr.length?arr.reduce((s,r)=>s+(col==="T"?r.T:r[col]),0)/arr.length:0;
-
-// ── Modal calendário ──────────────────────────────────────────────────────────
-function Modal({initialIdx, onClose}){
-  const [idx,setIdx] = useState(initialIdx);
-  const {fy,afn,mes,val} = ALL_CELLS[idx];
-  const mn  = MES_NUM[mes];
-  const ano = mn>=4?afn:afn+1;
-  const days = useMemo(()=>calcMes(ano,mn),[ano,mn]);
-  const firstDow = new Date(ano,mn-1,1).getDay();
-  const cells = [...Array(firstDow).fill(null),...days];
-  while(cells.length%7!==0) cells.push(null);
+function Modal({i0,onClose}){
+  const[idx,setIdx]=useState(i0);
+  const{fy,n,m,v}=ALL[idx];
+  const mn=MN[m],ano=mn>=4?n:n+1;
+  const days=useMemo(()=>calcMes(ano,mn),[ano,mn]);
+  const fd=new Date(ano,mn-1,1).getDay();
+  const cells=[...Array(fd).fill(null),...days];
+  while(cells.length%7)cells.push(null);
   const rows=[];
-  for(let i=0;i<cells.length;i+=7) rows.push(cells.slice(i,i+7));
-
-  function cs(tipo,valor){
-    if(tipo==="fds"||tipo==="feriado") return {bg:SE.pink,   tx:"#fff"};
-    if(valor===1)   return {bg:SE.blue,   tx:"#fff"};
-    if(valor===0.75)return {bg:SE.blueLt, tx:"#fff"};
-    if(valor===0.5) return {bg:SE.orange, tx:"#fff"};
-    if(valor===0.25)return {bg:SE.yellow, tx:SE.gray};
-    return {bg:"#E0E0E0",tx:"#666"};
-  }
-
+  for(let i=0;i<cells.length;i+=7)rows.push(cells.slice(i,i+7));
+  const cs=(tp,v)=>{
+    if(tp==="f"||tp==="h")return{bg:R,tx:"#fff"};
+    if(v===1)return{bg:B,tx:"#fff"};
+    if(v===0.5)return{bg:O,tx:"#fff"};
+    if(v===0.25)return{bg:Y,tx:GR};
+    return{bg:"#ddd",tx:"#666"};
+  };
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:100,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:12}}
-      onClick={onClose}>
-      <div style={{background:"#F4F6FA",borderRadius:16,overflow:"hidden",
-        maxWidth:460,width:"100%",boxShadow:"0 24px 64px rgba(0,0,0,0.22)",
-        maxHeight:"95vh",display:"flex",flexDirection:"column"}}
-        onClick={e=>e.stopPropagation()}>
-        <div style={{background:SE.blue,padding:"14px 16px",flexShrink:0,
-          display:"flex",alignItems:"center",gap:8}}>
-          <button onClick={()=>setIdx(i=>i-1)} disabled={idx===0}
-            style={{background:idx>0?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",
-              border:"none",color:"#fff",width:34,height:34,borderRadius:8,
-              cursor:idx>0?"pointer":"default",fontSize:20,display:"flex",
-              alignItems:"center",justifyContent:"center",opacity:idx>0?1:0.3,flexShrink:0}}>‹</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={onClose}>
+      <div style={{background:"#F4F6FA",borderRadius:16,overflow:"hidden",maxWidth:460,width:"100%",boxShadow:"0 24px 64px rgba(0,0,0,0.22)",maxHeight:"95vh",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
+
+        {/* Header com navegação */}
+        <div style={{background:B,padding:"12px 14px",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>setIdx(i=>Math.max(0,i-1))} disabled={idx===0}
+            style={{background:idx>0?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",border:"none",color:"#fff",width:32,height:32,borderRadius:7,cursor:idx>0?"pointer":"default",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",opacity:idx>0?1:0.3}}>‹</button>
           <div style={{flex:1,textAlign:"center"}}>
-            <div style={{color:"#fff",fontWeight:700,fontSize:17}}>{MES_NOME[mn]} {ano}</div>
-            <div style={{color:"rgba(255,255,255,0.6)",fontSize:11,marginTop:2}}>
-              {fy} · {fmt(val)} dias úteis
-            </div>
+            <div style={{color:"#fff",fontWeight:700,fontSize:16}}>{MNM[mn]} {ano}</div>
+            <div style={{color:"rgba(255,255,255,0.6)",fontSize:11,marginTop:1}}>{fy} · {f2(v)} dias úteis</div>
           </div>
-          <button onClick={()=>setIdx(i=>i+1)} disabled={idx===ALL_CELLS.length-1}
-            style={{background:idx<ALL_CELLS.length-1?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",
-              border:"none",color:"#fff",width:34,height:34,borderRadius:8,
-              cursor:idx<ALL_CELLS.length-1?"pointer":"default",fontSize:20,display:"flex",
-              alignItems:"center",justifyContent:"center",
-              opacity:idx<ALL_CELLS.length-1?1:0.3,flexShrink:0}}>›</button>
-          <button onClick={onClose}
-            style={{background:"rgba(255,255,255,0.18)",border:"none",color:"#fff",
-              width:34,height:34,borderRadius:8,cursor:"pointer",fontSize:18,
-              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
+          <button onClick={()=>setIdx(i=>Math.min(ALL.length-1,i+1))} disabled={idx===ALL.length-1}
+            style={{background:idx<ALL.length-1?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",border:"none",color:"#fff",width:32,height:32,borderRadius:7,cursor:idx<ALL.length-1?"pointer":"default",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",opacity:idx<ALL.length-1?1:0.3}}>›</button>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.18)",border:"none",color:"#fff",width:32,height:32,borderRadius:7,cursor:"pointer",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",marginLeft:4}}>✕</button>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",
-          gap:3,padding:"10px 10px 4px",background:"#F4F6FA",flexShrink:0}}>
-          {DOW_NAMES.map(d=>(
-            <div key={d} style={{textAlign:"center",fontSize:11,fontWeight:700,
-              color:d==="Dom"||d==="Sáb"?SE.pink:SE.blue,padding:"3px 0"}}>{d}</div>
+
+        {/* Cabeçalho dias da semana */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,padding:"10px 10px 4px",background:"#F4F6FA",flexShrink:0}}>
+          {DW.map(d=>(
+            <div key={d} style={{textAlign:"center",fontSize:11,fontWeight:700,color:d==="Dom"||d==="Sáb"?R:B,padding:"3px 0"}}>{d}</div>
           ))}
         </div>
+
+        {/* Grid de dias */}
         <div style={{overflowY:"auto",padding:"3px 10px 14px",flex:1}}>
           {rows.map((row,ri)=>(
-            <div key={ri} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",
-              gap:3,marginBottom:3}}>
-              {row.map((cell,ci)=>{
-                if(!cell) return <div key={ci}/>;
-                const {bg,tx}=cs(cell.tipo,cell.valor);
+            <div key={ri} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:3}}>
+              {row.map((c,ci)=>{
+                if(!c)return<div key={ci}/>;
+                const{bg,tx}=cs(c.tp,c.v);
                 return(
-                  <div key={ci} style={{background:"#fff",borderRadius:9,padding:"5px 3px",
-                    display:"flex",flexDirection:"column",alignItems:"center",gap:3,
-                    boxShadow:"0 1px 3px rgba(0,0,0,0.07)"}}>
-                    <span style={{fontSize:12,fontWeight:500,color:SE.gray}}>{cell.dia}</span>
-                    <div style={{background:bg,borderRadius:6,width:"100%",padding:"3px 2px",
-                      display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      <span style={{fontSize:10,fontWeight:800,color:tx}}>{fmt(cell.valor)}</span>
+                  <div key={ci} style={{background:"#fff",borderRadius:9,padding:"5px 3px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,boxShadow:"0 1px 3px rgba(0,0,0,0.07)"}}>
+                    <span style={{fontSize:12,fontWeight:500,color:GR}}>{c.d}</span>
+                    <div style={{background:bg,borderRadius:6,width:"100%",padding:"3px 2px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{fontSize:10,fontWeight:800,color:tx}}>{f2(c.v)}</span>
                     </div>
-                    {cell.label&&(
-                      <span style={{fontSize:7,color:SE.grayMd,textAlign:"center",
-                        lineHeight:1.2,wordBreak:"break-word"}}>
-                        {cell.label.split(" ").slice(0,2).join(" ")}
-                      </span>
-                    )}
+                    {c.lb&&<span style={{fontSize:7,color:GM,textAlign:"center",lineHeight:1.2}}>{c.lb}</span>}
                   </div>
                 );
               })}
             </div>
           ))}
-          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:10,
-            padding:"8px",background:"#fff",borderRadius:10}}>
-            {[{c:SE.blue,l:"1,0 Útil"},{c:SE.orange,l:"0,5 Véspera/Emenda"},
-              {c:SE.yellow,l:"0,25 Recesso"},{c:SE.pink,l:"0 Feriado/FDS"}].map(s=>(
-              <div key={s.l} style={{display:"flex",alignItems:"center",gap:5,
-                fontSize:9.5,color:SE.grayMd}}>
+          {/* Legenda */}
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:10,padding:"8px",background:"#fff",borderRadius:10}}>
+            {[{c:B,l:"1,0 Útil"},{c:O,l:"0,5 Emenda/Vésp"},{c:Y,l:"0,25 Recesso"},{c:R,l:"0 Feriado/FDS"}].map(s=>(
+              <div key={s.l} style={{display:"flex",alignItems:"center",gap:5,fontSize:9.5,color:GM}}>
                 <div style={{width:11,height:11,borderRadius:3,background:s.c,flexShrink:0}}/>
                 {s.l}
               </div>
@@ -212,81 +146,44 @@ function Modal({initialIdx, onClose}){
   );
 }
 
-// ── Dropdown multiselect ──────────────────────────────────────────────────────
-function MultiSelect({options, selected, onChange}){
-  const [open,setOpen] = useState(false);
-  const ref = useRef(null);
-
+function MultiSelect({options,sel,onChange}){
+  const[open,setOpen]=useState(false);
+  const ref=useRef(null);
   useEffect(()=>{
-    const handler = e => { if(ref.current&&!ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown",handler);
-    return ()=>document.removeEventListener("mousedown",handler);
+    const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
+    document.addEventListener("mousedown",h);
+    return()=>document.removeEventListener("mousedown",h);
   },[]);
-
-  const allSel = selected.size===options.length;
-  const toggle = v => {
-    const next = new Set(selected);
-    next.has(v)?next.delete(v):next.add(v);
-    if(next.size>0) onChange(next);
-  };
-  const toggleAll = () => onChange(allSel?new Set([options[0]]):new Set(options));
-
-  const label = allSel
-    ? "Todos os anos"
-    : selected.size===1
-      ? [...selected][0]
-      : `${selected.size} anos selecionados`;
-
+  const allSel=sel.size===options.length;
+  const toggle=v=>{const n=new Set(sel);n.has(v)?n.delete(v):n.add(v);if(n.size>0)onChange(n);};
+  const label=allSel?"Todos":sel.size===1?[...sel][0]:`${sel.size} anos`;
   return(
-    <div ref={ref} style={{position:"relative",minWidth:200}}>
-      <button onClick={()=>setOpen(o=>!o)}
-        style={{width:"100%",background:"#F0F4FA",border:`1px solid ${SE.blue}55`,
-          borderRadius:7,padding:"7px 34px 7px 12px",color:SE.gray,fontSize:12,
-          fontFamily:"inherit",cursor:"pointer",textAlign:"left",position:"relative",
-          fontWeight:selected.size<options.length?600:400}}>
+    <div ref={ref} style={{position:"relative",minWidth:150}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",background:"#F0F4FA",border:`1px solid ${B}55`,borderRadius:7,padding:"6px 24px 6px 11px",color:GR,fontSize:12,fontFamily:"inherit",cursor:"pointer",textAlign:"left",position:"relative"}}>
         {label}
-        <span style={{position:"absolute",right:10,top:"50%",
-          transform:`translateY(-50%) rotate(${open?180:0}deg)`,
-          transition:"transform .2s",fontSize:10,color:SE.grayMd}}>▼</span>
+        <span style={{position:"absolute",right:8,top:"50%",transform:`translateY(-50%) rotate(${open?180:0}deg)`,transition:"transform .2s",fontSize:9,color:GM}}>▼</span>
       </button>
-
       {open&&(
-        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:50,
-          background:"#fff",border:`1px solid ${SE.blue}33`,borderRadius:9,
-          boxShadow:"0 8px 24px rgba(0,0,0,0.12)",overflow:"hidden"}}>
-          {/* Selecionar todos */}
-          <div onClick={toggleAll}
-            style={{padding:"8px 12px",cursor:"pointer",display:"flex",
-              alignItems:"center",gap:8,
-              background:allSel?`${SE.blue}10`:"transparent",
-              borderBottom:`1px solid #E8EEF8`}}>
-            <div style={{width:16,height:16,borderRadius:4,border:`2px solid ${SE.blue}`,
-              background:allSel?SE.blue:"transparent",display:"flex",
-              alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              {allSel&&<span style={{color:"#fff",fontSize:10,fontWeight:800}}>✓</span>}
+        <div style={{position:"absolute",top:"calc(100% + 3px)",left:0,right:0,zIndex:50,background:"#fff",border:`1px solid ${B}33`,borderRadius:9,boxShadow:"0 8px 24px rgba(0,0,0,0.12)",overflow:"hidden"}}>
+          <div onClick={()=>onChange(allSel?new Set([options[0]]):new Set(options))}
+            style={{padding:"7px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:7,borderBottom:"1px solid #eee"}}>
+            <div style={{width:13,height:13,borderRadius:3,border:`2px solid ${B}`,background:allSel?B:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {allSel&&<span style={{color:"#fff",fontSize:8,fontWeight:800}}>✓</span>}
             </div>
-            <span style={{fontSize:12,fontWeight:700,color:SE.blue}}>Selecionar todos</span>
+            <span style={{fontSize:11,fontWeight:700,color:B}}>Todos</span>
           </div>
-          {/* Lista de anos */}
-          <div style={{maxHeight:280,overflowY:"auto"}}>
-            {options.map(opt=>{
-              const sel = selected.has(opt);
+          <div style={{maxHeight:220,overflowY:"auto"}}>
+            {options.map(o=>{
+              const s=sel.has(o);
               return(
-                <div key={opt} onClick={()=>toggle(opt)}
-                  style={{padding:"7px 12px",cursor:"pointer",display:"flex",
-                    alignItems:"center",gap:8,
-                    background:sel?`${SE.blue}08`:"transparent",
-                    transition:"background .1s"}}
-                  onMouseEnter={e=>e.currentTarget.style.background=`${SE.blue}10`}
-                  onMouseLeave={e=>e.currentTarget.style.background=sel?`${SE.blue}08`:"transparent"}>
-                  <div style={{width:16,height:16,borderRadius:4,
-                    border:`2px solid ${sel?SE.blue:"#D0D8E8"}`,
-                    background:sel?SE.blue:"transparent",display:"flex",
-                    alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    {sel&&<span style={{color:"#fff",fontSize:10,fontWeight:800}}>✓</span>}
+                <div key={o} onClick={()=>toggle(o)}
+                  style={{padding:"5px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:7}}
+                  onMouseEnter={e=>e.currentTarget.style.background="#EBF2FF"}
+                  onMouseLeave={e=>e.currentTarget.style.background=""}>
+                  <div style={{width:13,height:13,borderRadius:3,border:`2px solid ${s?B:"#ccc"}`,background:s?B:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {s&&<span style={{color:"#fff",fontSize:8,fontWeight:800}}>✓</span>}
                   </div>
-                  <span style={{fontSize:12,color:sel?SE.blue:SE.gray,
-                    fontWeight:sel?600:400}}>{opt}</span>
+                  <span style={{fontSize:11,color:s?B:GR,fontWeight:s?600:400}}>{o}</span>
                 </div>
               );
             })}
@@ -297,211 +194,277 @@ function MultiSelect({options, selected, onChange}){
   );
 }
 
-// ── App ────────────────────────────────────────────────────────────────────────
+function exportXLSX(sorted,rows,cP,cA,fl){
+  const MS2=["Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez","Jan","Fev","Mar"];
+  const header=["FY",...MS2,"Total","Q1","Q2","Q3","Q4","H1","H2"];
+  const q1r=r=>r.Abr+r.Mai+r.Jun,q2r=r=>r.Jul+r.Ago+r.Set,q3r=r=>r.Out+r.Nov+r.Dez,q4r=r=>r.Jan+r.Fev+r.Mar;
+  const dataRows=sorted.map(row=>[row.fy,...MS2.map(m=>row[m]),row.T,
+    parseFloat(q1r(row).toFixed(2)),parseFloat(q2r(row).toFixed(2)),
+    parseFloat(q3r(row).toFixed(2)),parseFloat(q4r(row).toFixed(2)),
+    parseFloat((q1r(row)+q2r(row)).toFixed(2)),parseFloat((q3r(row)+q4r(row)).toFixed(2))]);
+  const fmtP=v=>v===null?"—":`${v>=0?"+":""}${v.toFixed(1)}%`;
+  const fmtA=v=>v===null?"—":`${v>=0?"+":""}${parseFloat(v.toFixed(2))}`;
+  const yR=[`YoY% (${fl})`,...MS2.map(m=>fmtP(cP(m))),fmtP(cP("T")),
+    fmtP(cP("Q1")),fmtP(cP("Q2")),fmtP(cP("Q3")),fmtP(cP("Q4")),fmtP(cP("H1")),fmtP(cP("H2"))];
+  const dR=[`Δ Dias (${fl})`,...MS2.map(m=>fmtA(cA(m))),fmtA(cA("T")),
+    fmtA(cA("Q1")),fmtA(cA("Q2")),fmtA(cA("Q3")),fmtA(cA("Q4")),fmtA(cA("H1")),fmtA(cA("H2"))];
+  const script=document.createElement("script");
+  script.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  script.onload=()=>{
+    const X=window.XLSX;
+    const ws=X.utils.aoa_to_sheet([header,...dataRows,[],[yR],[dR]]);
+    ws["!cols"]=[{wch:8},...MS2.map(()=>({wch:7})),{wch:9},{wch:7},{wch:7},{wch:7},{wch:7},{wch:9},{wch:9}];
+    const wb=X.utils.book_new();
+    X.utils.book_append_sheet(wb,ws,"Calendário Fiscal");
+    X.writeFile(wb,`CalendarioFiscal_${rows[0]?.fy}_${rows[rows.length-1]?.fy}.xlsx`);
+  };
+  document.head.appendChild(script);
+}
+
 export default function App(){
-  const [sortCol,setSortCol]   = useState(null);
-  const [sortDir,setSortDir]   = useState(1);
-  const [hoverCol,setHoverCol] = useState(null);
-  const [hoverRow,setHoverRow] = useState(null);
-  const [fysSel,setFysSel]     = useState(new Set(FYS));
-  const [modalIdx,setModalIdx] = useState(null);
+  const[sC,setSC]=useState(null);
+  const[sD,setSD]=useState(1);
+  const[hC,setHC]=useState(null);
+  const[hR,setHR]=useState(null);
+  const[sel,setSel]=useState(new Set(FYS));
+  const[mIdx,setMIdx]=useState(null);
 
-  // Ao mudar seleção: mostra os 5 primeiros a partir do menor selecionado
-  const handleFyChange = (newSel) => {
-    setFysSel(newSel);
-    setSortCol(null);
-  };
+  const rows=useMemo(()=>{
+    const base=D.filter(r=>sel.has(r.fy));
+    if(!base.length)return D.slice(0,6);
+    const i=D.findIndex(r=>r.fy===base[0].fy);
+    return D.slice(i,Math.min(i+6,D.length));
+  },[sel]);
 
-  // Filtra e pega no máximo 5 a partir do primeiro selecionado
-  const rowsFY = useMemo(()=>{
-    const base = DATA.filter(r=>fysSel.has(r.fy));
-    if(base.length===0) return DATA.slice(0,5);
-    const firstIdx = DATA.findIndex(r=>r.fy===base[0].fy);
-    return DATA.slice(firstIdx, firstIdx+5);
-  },[fysSel]);
+  const sorted=useMemo(()=>
+    sC?[...rows].sort((a,b)=>(gV(a,sC)-gV(b,sC))*sD):rows
+  ,[rows,sC,sD]);
 
-  const colsMes = MESES;
+  const hs=c=>{if(sC===c)setSD(d=>-d);else{setSC(c);setSD(1);}};
 
-  const sortedRows = useMemo(()=>{
-    if(!sortCol) return rowsFY;
-    return [...rowsFY].sort((a,b)=>{
-      const va=sortCol==="T"?a.T:a[sortCol];
-      const vb=sortCol==="T"?b.T:b[sortCol];
-      return (va-vb)*sortDir;
-    });
-  },[rowsFY,sortCol,sortDir]);
+  const r0=rows[0];
+  const prev=useMemo(()=>{
+    const i=D.findIndex(r=>r.fy===r0?.fy);
+    return i>0?D[i-1]:null;
+  },[r0]);
 
-  const handleSortCol = col=>{
-    if(sortCol===col) setSortDir(d=>-d);
-    else{ setSortCol(col); setSortDir(1); }
-  };
+  const cP=k=>{if(!r0||!prev)return null;const c=gV(r0,k),p=gV(prev,k);return p===0?null:((c-p)/p)*100;};
+  const cA=k=>{if(!r0||!prev)return null;return parseFloat((gV(r0,k)-gV(prev,k)).toFixed(2));};
+  const fl=r0&&prev?`${r0.fy} vs ${prev.fy}`:"—";
 
-  const avgCol = col => rowsFY.length
-    ? rowsFY.reduce((s,r)=>s+(col==="T"?r.T:r[col]),0)/rowsFY.length:0;
+  // Estilos reutilizáveis
+  const thM=(k,sep)=>({
+    padding:"10px 4px",textAlign:"center",minWidth:52,cursor:"pointer",userSelect:"none",
+    color:sC===k?Y:"#fff",fontSize:9,letterSpacing:"0.07em",textTransform:"uppercase",
+    fontWeight:700,background:sC===k?BD:B,
+    borderLeft:sep?"2px solid rgba(255,255,255,0.25)":"none",whiteSpace:"nowrap"
+  });
+  const thNM=(k,sep)=>({
+    padding:"10px 6px",textAlign:"center",minWidth:58,userSelect:"none",
+    color:"#fff",fontSize:9,letterSpacing:"0.07em",textTransform:"uppercase",
+    fontWeight:700,background:B,
+    borderLeft:sep?"2px solid rgba(255,255,255,0.25)":"none",whiteSpace:"nowrap"
+  });
+  const tdM=(hl,sep)=>({
+    padding:"5px 2px",textAlign:"center",
+    background:hl?"#EBF2FF":"transparent",
+    borderLeft:sep?"2px solid #E0E8F5":"none"
+  });
+  const tdNM=(sep)=>({
+    padding:"5px 4px",textAlign:"center",
+    borderLeft:sep?"2px solid #E0E8F5":"none"
+  });
+
+  // Célula clicável (meses)
+  const celM=(v,fn)=>(
+    <div onClick={fn}
+      style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
+        width:42,height:24,borderRadius:5,color:GR,fontWeight:500,fontSize:12,
+        border:"1px solid #D8E4F0",cursor:"pointer"}}
+      onMouseEnter={e=>e.currentTarget.style.background="#EBF2FF"}
+      onMouseLeave={e=>e.currentTarget.style.background=""}>
+      {f2(v)}
+    </div>
+  );
+
+  // Célula não-clicável (Total, Q, H)
+  const celNM=(v)=>(
+    <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
+      width:46,height:24,borderRadius:5,color:GR,fontWeight:600,fontSize:12,
+      border:"1px solid #E8EEF8",background:"#F7FAFF"}}>
+      {f2(v)}
+    </div>
+  );
 
   return(
-    <div style={{minHeight:"100vh",width:"100%",background:"#F0F4FA",
-      fontFamily:"'Inter','Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
+    <div style={{minHeight:"100vh",width:"100%",background:"#F0F4FA",fontFamily:"'Inter','Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        html,body,#root{margin:0;padding:0;width:100%;height:100%}
+        html,body,#root{margin:0;padding:0;width:100%}
         *{box-sizing:border-box}
         ::-webkit-scrollbar{width:5px;height:5px}
-        ::-webkit-scrollbar-track{background:#F0F4FA}
-        ::-webkit-scrollbar-thumb{background:${SE.blue};border-radius:3px}
-        .pip{cursor:pointer;transition:opacity .15s,transform .15s}
-        .pip:hover{opacity:.78;transform:scale(1.06)}
-        .th-s{cursor:pointer;user-select:none;transition:background .15s}
-        .th-s:hover{background:${SE.blueDk}!important}
-        tr.row:hover td{background:#EBF2FF!important}
+        ::-webkit-scrollbar-thumb{background:${B};border-radius:3px}
       `}</style>
 
-      {modalIdx!==null&&(
-        <Modal initialIdx={modalIdx} onClose={()=>setModalIdx(null)}/>
-      )}
+      {mIdx!==null&&<Modal i0={mIdx} onClose={()=>setMIdx(null)}/>}
 
       {/* HEADER */}
-      <div style={{background:SE.blue,padding:"16px 32px",
-        boxShadow:"0 4px 16px rgba(0,0,0,0.18)",width:"100%"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:4,height:32,background:SE.red,borderRadius:2}}/>
-          <h1 style={{color:"#fff",fontSize:"clamp(16px,2vw,24px)",
-            fontWeight:700,letterSpacing:"-0.01em",margin:0}}>
-            Calendário Fiscal - PME
-          </h1>
+      <div style={{background:B,padding:"13px 24px",boxShadow:"0 4px 14px rgba(0,0,0,0.18)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:4,height:28,background:R,borderRadius:2}}/>
+            <h1 style={{color:"#fff",fontSize:"clamp(14px,2vw,22px)",fontWeight:700,letterSpacing:"-0.01em",margin:0}}>
+              Calendário Fiscal - PME
+            </h1>
+          </div>
+          <button
+            onClick={()=>exportXLSX(sorted,rows,cP,cA,fl)}
+            style={{display:"flex",alignItems:"center",gap:7,background:"rgba(255,255,255,0.15)",
+              border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,
+              padding:"7px 14px",color:"#fff",fontFamily:"inherit",fontSize:12,
+              fontWeight:600,cursor:"pointer",transition:"background .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"}
+            onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>
+            <span style={{fontSize:15}}>⬇</span> Exportar Excel
+          </button>
         </div>
       </div>
 
       {/* FILTROS */}
-      <div style={{background:"#fff",borderBottom:"2px solid #E0E8F5",
-        padding:"12px 32px",boxShadow:"0 2px 6px rgba(0,0,0,0.05)",width:"100%"}}>
-        <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
-          <label style={{fontSize:10,fontWeight:700,color:SE.grayMd,
-            letterSpacing:"0.1em",textTransform:"uppercase",whiteSpace:"nowrap"}}>
-            Ano Fiscal
-          </label>
-          <MultiSelect options={FYS} selected={fysSel} onChange={handleFyChange}/>
-          <span style={{fontSize:11,color:SE.grayMd}}>
-            {`Exibindo ${rowsFY.length} ano${rowsFY.length!==1?"s":""} a partir de ${rowsFY[0]?.fy??""}`}
+      <div style={{background:"#fff",borderBottom:"2px solid #E0E8F5",padding:"9px 24px",boxShadow:"0 2px 6px rgba(0,0,0,0.05)"}}>
+        <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{fontSize:10,fontWeight:700,color:GM,letterSpacing:"0.1em",textTransform:"uppercase"}}>Ano Fiscal</span>
+          <MultiSelect options={FYS} sel={sel} onChange={s=>{setSel(s);setSC(null);}}/>
+          <span style={{fontSize:11,color:GM}}>
+            {rows.length} anos · {rows[0]?.fy} → {rows[rows.length-1]?.fy}
           </span>
         </div>
       </div>
 
-      {/* TABELA — ocupa toda a largura */}
-      <div style={{flex:1,padding:"16px 32px 24px",width:"100%",overflow:"auto"}}>
-        <div style={{borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.08)",
-          border:"1px solid #D8E4F0",overflow:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",
-            fontSize:13,fontFamily:"inherit",background:"#fff"}}>
+      {/* TABELA */}
+      <div style={{flex:1,padding:"12px 24px 18px",overflow:"auto"}}>
+        <div style={{borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.08)",border:"1px solid #D8E4F0",overflow:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:"inherit",background:"#fff"}}>
             <thead>
-              <tr style={{background:SE.blue}}>
-                <th style={{padding:"12px 18px",textAlign:"left",color:"#fff",
-                  fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
-                  position:"sticky",left:0,background:SE.blue,zIndex:3,minWidth:72,
+              <tr style={{background:B}}>
+                {/* FY — coluna estreita */}
+                <th style={{padding:"10px 10px",textAlign:"left",color:"#fff",fontSize:9,
+                  letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
+                  position:"sticky",left:0,background:B,zIndex:3,minWidth:44,maxWidth:50,
                   borderRight:"2px solid rgba(255,255,255,0.15)"}}>FY</th>
-                {colsMes.map(m=>(
-                  <th key={m} className="th-s" onClick={()=>handleSortCol(m)}
-                    onMouseEnter={()=>setHoverCol(m)}
-                    onMouseLeave={()=>setHoverCol(null)}
-                    style={{padding:"12px 6px",textAlign:"center",
-                      color:sortCol===m?SE.yellow:hoverCol===m?"rgba(255,255,255,0.85)":"#fff",
-                      fontSize:10,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,
-                      background:sortCol===m?SE.blueDk:SE.blue,
-                      whiteSpace:"nowrap",minWidth:58}}>
-                    {m}{sortCol===m?(sortDir===1?" ↑":" ↓"):""}
+
+                {/* Meses — clicáveis para ordenar */}
+                {MS.map(m=>(
+                  <th key={m} onClick={()=>hs(m)}
+                    onMouseEnter={()=>setHC(m)} onMouseLeave={()=>setHC(null)}
+                    style={thM(m,false)}>
+                    {m}{sC===m?(sD===1?"↑":"↓"):""}
                   </th>
                 ))}
-                <th className="th-s" onClick={()=>handleSortCol("T")}
-                  style={{padding:"12px 14px",textAlign:"center",minWidth:72,
-                    color:sortCol==="T"?SE.yellow:"#fff",fontSize:10,
-                    letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,
-                    background:sortCol==="T"?SE.blueDk:SE.blue,
-                    borderLeft:"2px solid rgba(255,255,255,0.15)"}}>
-                  Total{sortCol==="T"?(sortDir===1?" ↑":" ↓"):""}
-                </th>
+
+                {/* Total — não ordenável, não clicável */}
+                <th style={thNM("T",true)}>Total</th>
+
+                {/* Q1-Q4 H1-H2 — não ordenáveis */}
+                {EX.map(e=>(
+                  <th key={e.k} style={thNM(e.k,!!e.s)}>{e.k}</th>
+                ))}
               </tr>
             </thead>
 
             <tbody>
-              {sortedRows.map((row,ri)=>{
-                const isHR=hoverRow===row.fy;
+              {sorted.map((row,ri)=>{
+                const hr=hR===row.fy;
+                const bg=hr?"#EBF2FF":ri%2===0?"#fff":"#F7FAFF";
                 return(
-                  <tr key={row.fy} className="row"
-                    onMouseEnter={()=>setHoverRow(row.fy)}
-                    onMouseLeave={()=>setHoverRow(null)}
-                    style={{background:ri%2===0?"#fff":"#F7FAFF",
-                      borderBottom:"1px solid #E8EEF8"}}>
-                    <td style={{padding:"10px 18px",fontWeight:700,
-                      color:isHR?SE.blue:SE.gray,fontSize:13,
-                      position:"sticky",left:0,zIndex:1,
-                      background:isHR?"#EBF2FF":ri%2===0?"#fff":"#F7FAFF",
-                      borderRight:"2px solid #E0E8F5",
-                      whiteSpace:"nowrap",transition:"color .15s"}}>
+                  <tr key={row.fy}
+                    onMouseEnter={()=>setHR(row.fy)}
+                    onMouseLeave={()=>setHR(null)}
+                    style={{background:bg,borderBottom:"1px solid #E8EEF8"}}>
+
+                    {/* FY */}
+                    <td style={{padding:"7px 10px",fontWeight:700,color:hr?B:GR,fontSize:12,
+                      position:"sticky",left:0,zIndex:1,background:bg,
+                      borderRight:"2px solid #E0E8F5",whiteSpace:"nowrap",transition:"color .15s"}}>
                       {row.fy}
                     </td>
-                    {colsMes.map(m=>{
-                      const v=row[m];
-                      const cellIdx=ALL_CELLS.findIndex(c=>c.fy===row.fy&&c.mes===m);
-                      const isColHL=hoverCol===m;
+
+                    {/* Meses — abre modal */}
+                    {MS.map(m=>{
+                      const ci=ALL.findIndex(c=>c.fy===row.fy&&c.m===m);
                       return(
-                        <td key={m} style={{padding:"7px 4px",textAlign:"center",
-                          background:isColHL?"#EBF2FF":"transparent"}}>
-                          <div className="pip"
-                            onClick={()=>setModalIdx(cellIdx)}
-                            title="Ver calendário"
-                            style={{display:"inline-flex",alignItems:"center",
-                              justifyContent:"center",width:46,height:28,
-                              borderRadius:6,background:"transparent",
-                              color:SE.gray,fontWeight:500,fontSize:13,
-                              border:"1px solid #D8E4F0"}}>
-                            {fmt(v)}
-                          </div>
+                        <td key={m} style={tdM(hC===m,false)}>
+                          {celM(row[m],()=>setMIdx(ci))}
                         </td>
                       );
                     })}
-                    <td style={{padding:"7px 10px",textAlign:"center",
-                      borderLeft:"2px solid #E0E8F5"}}>
-                      <div style={{display:"inline-flex",alignItems:"center",
-                        justifyContent:"center",width:56,height:28,
-                        borderRadius:6,background:"transparent",
-                        color:SE.gray,fontWeight:700,fontSize:13,
-                        border:"1px solid #D8E4F0"}}>
-                        {fmt(row.T)}
-                      </div>
-                    </td>
+
+                    {/* Total — sem modal */}
+                    <td style={tdNM(true)}>{celNM(row.T)}</td>
+
+                    {/* Q e H — sem modal */}
+                    {EX.map(e=>(
+                      <td key={e.k} style={tdNM(!!e.s)}>
+                        {celNM(parseFloat(e.fn(row).toFixed(2)))}
+                      </td>
+                    ))}
                   </tr>
                 );
               })}
             </tbody>
 
-            {sortedRows.length>1&&(
-              <tfoot>
-                <tr style={{background:SE.blue,borderTop:`3px solid ${SE.blueDk}`}}>
-                  <td style={{padding:"10px 18px",color:"#fff",fontSize:10,fontWeight:700,
-                    letterSpacing:"0.1em",textTransform:"uppercase",
-                    position:"sticky",left:0,background:SE.blue,zIndex:1,
-                    borderRight:"2px solid rgba(255,255,255,0.15)"}}>Média</td>
-                  {colsMes.map(m=>(
-                    <td key={m} style={{padding:"10px 4px",textAlign:"center"}}>
-                      <span style={{color:"#fff",fontSize:12,fontWeight:600}}>
-                        {avgCol(m).toFixed(1)}
-                      </span>
-                    </td>
-                  ))}
-                  <td style={{padding:"10px 10px",textAlign:"center",
-                    borderLeft:"2px solid rgba(255,255,255,0.15)"}}>
-                    <span style={{color:"#fff",fontSize:13,fontWeight:700}}>
-                      {avgCol("T").toFixed(2)}
-                    </span>
+            <tfoot>
+              {/* YoY % */}
+              <tr style={{background:"#EBF2FF",borderTop:`3px solid ${B}`}}>
+                <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
+                  letterSpacing:"0.08em",textTransform:"uppercase",
+                  position:"sticky",left:0,background:"#EBF2FF",zIndex:1,
+                  borderRight:"2px solid #D0DCF0",whiteSpace:"nowrap"}}>
+                  YoY% <small style={{fontWeight:400,color:GM,fontSize:8}}>{fl}</small>
+                </td>
+                {MS.map(m=>{const v=cP(m);return(
+                  <td key={m} style={{padding:"7px 2px",textAlign:"center"}}>
+                    <span style={{fontSize:10,fontWeight:700,color:yC(v)}}>{fP(v)}</span>
                   </td>
-                </tr>
-              </tfoot>
-            )}
+                );})}
+                <td style={{padding:"7px 6px",textAlign:"center",borderLeft:"2px solid #D0DCF0"}}>
+                  <span style={{fontSize:10,fontWeight:700,color:yC(cP("T"))}}>{fP(cP("T"))}</span>
+                </td>
+                {EX.map(e=>{const v=cP(e.k);return(
+                  <td key={e.k} style={{padding:"7px 3px",textAlign:"center",borderLeft:e.s?"2px solid #D0DCF0":"none"}}>
+                    <span style={{fontSize:10,fontWeight:700,color:yC(v)}}>{fP(v)}</span>
+                  </td>
+                );})}
+              </tr>
+
+              {/* Δ Dias */}
+              <tr style={{background:"#F7FAFF"}}>
+                <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
+                  letterSpacing:"0.08em",textTransform:"uppercase",
+                  position:"sticky",left:0,background:"#F7FAFF",zIndex:1,
+                  borderRight:"2px solid #D0DCF0",whiteSpace:"nowrap"}}>
+                  Δ Dias <small style={{fontWeight:400,color:GM,fontSize:8}}>{fl}</small>
+                </td>
+                {MS.map(m=>{const v=cA(m);return(
+                  <td key={m} style={{padding:"7px 2px",textAlign:"center"}}>
+                    <span style={{fontSize:10,fontWeight:600,color:yC(v)}}>{fA(v)}</span>
+                  </td>
+                );})}
+                <td style={{padding:"7px 6px",textAlign:"center",borderLeft:"2px solid #D0DCF0"}}>
+                  <span style={{fontSize:10,fontWeight:700,color:yC(cA("T"))}}>{fA(cA("T"))}</span>
+                </td>
+                {EX.map(e=>{const v=cA(e.k);return(
+                  <td key={e.k} style={{padding:"7px 3px",textAlign:"center",borderLeft:e.s?"2px solid #D0DCF0":"none"}}>
+                    <span style={{fontSize:10,fontWeight:600,color:yC(v)}}>{fA(v)}</span>
+                  </td>
+                );})}
+              </tr>
+            </tfoot>
           </table>
         </div>
 
-        <div style={{marginTop:10,textAlign:"center",fontSize:11,color:SE.grayMd}}>
-          Clique em qualquer célula para abrir o calendário do mês · Use ‹ › para navegar · Clique no cabeçalho do mês para ordenar
+        <div style={{marginTop:8,textAlign:"center",fontSize:10,color:GM}}>
+          Clique nas DU's para abrir o calendário visual · ‹ › para navegar
         </div>
       </div>
     </div>
