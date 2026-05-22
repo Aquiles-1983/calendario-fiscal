@@ -350,7 +350,7 @@ export default function App(){
                 {/* FY — coluna estreita */}
                 <th style={{padding:"10px 10px",textAlign:"left",color:"#fff",fontSize:9,
                   letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
-                  position:"sticky",left:0,background:B,zIndex:3,width:50,minWidth:50,maxWidth:50,
+                  position:"sticky",left:0,background:B,zIndex:3,width:62,minWidth:62,maxWidth:62,
                   borderRight:"2px solid rgba(255,255,255,0.15)"}}>FY</th>
 
                 {/* Meses — clicáveis para ordenar */}
@@ -384,7 +384,7 @@ export default function App(){
 
                     {/* FY */}
                     <td style={{padding:"7px 10px",fontWeight:700,color:hr?B:GR,fontSize:12,
-                      position:"sticky",left:0,zIndex:1,background:bg,width:50,minWidth:50,maxWidth:50,
+                      position:"sticky",left:0,zIndex:1,background:bg,width:62,minWidth:62,maxWidth:62,
                       borderRight:"2px solid #E0E8F5",whiteSpace:"nowrap",transition:"color .15s"}}>
                       {row.fy}
                     </td>
@@ -419,7 +419,7 @@ export default function App(){
                 <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
                   letterSpacing:"0.08em",textTransform:"uppercase",
                   position:"sticky",left:0,background:"#EBF2FF",zIndex:1,
-                  width:50,minWidth:50,maxWidth:50,
+                  width:62,minWidth:62,maxWidth:62,
                   borderRight:"2px solid #D0DCF0",overflow:"hidden"}}>
                   YoY%
                 </td>
@@ -443,7 +443,7 @@ export default function App(){
                 <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
                   letterSpacing:"0.08em",textTransform:"uppercase",
                   position:"sticky",left:0,background:"#F7FAFF",zIndex:1,
-                  width:50,minWidth:50,maxWidth:50,
+                  width:62,minWidth:62,maxWidth:62,
                   borderRight:"2px solid #D0DCF0",overflow:"hidden"}}>
                   Δ Dias
                 </td>
