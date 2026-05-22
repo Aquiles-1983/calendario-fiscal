@@ -350,7 +350,7 @@ export default function App(){
                 {/* FY — coluna estreita */}
                 <th style={{padding:"10px 10px",textAlign:"left",color:"#fff",fontSize:9,
                   letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
-                  position:"sticky",left:0,background:B,zIndex:3,minWidth:44,maxWidth:50,
+                  position:"sticky",left:0,background:B,zIndex:3,width:50,minWidth:50,maxWidth:50,
                   borderRight:"2px solid rgba(255,255,255,0.15)"}}>FY</th>
 
                 {/* Meses — clicáveis para ordenar */}
@@ -384,7 +384,7 @@ export default function App(){
 
                     {/* FY */}
                     <td style={{padding:"7px 10px",fontWeight:700,color:hr?B:GR,fontSize:12,
-                      position:"sticky",left:0,zIndex:1,background:bg,
+                      position:"sticky",left:0,zIndex:1,background:bg,width:50,minWidth:50,maxWidth:50,
                       borderRight:"2px solid #E0E8F5",whiteSpace:"nowrap",transition:"color .15s"}}>
                       {row.fy}
                     </td>
@@ -419,8 +419,9 @@ export default function App(){
                 <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
                   letterSpacing:"0.08em",textTransform:"uppercase",
                   position:"sticky",left:0,background:"#EBF2FF",zIndex:1,
-                  borderRight:"2px solid #D0DCF0",whiteSpace:"nowrap"}}>
-                  YoY% <small style={{fontWeight:400,color:GM,fontSize:8}}>{fl}</small>
+                  width:50,minWidth:50,maxWidth:50,
+                  borderRight:"2px solid #D0DCF0",overflow:"hidden"}}>
+                  YoY%
                 </td>
                 {MS.map(m=>{const v=cP(m);return(
                   <td key={m} style={{padding:"7px 2px",textAlign:"center"}}>
@@ -442,8 +443,9 @@ export default function App(){
                 <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
                   letterSpacing:"0.08em",textTransform:"uppercase",
                   position:"sticky",left:0,background:"#F7FAFF",zIndex:1,
-                  borderRight:"2px solid #D0DCF0",whiteSpace:"nowrap"}}>
-                  Δ Dias <small style={{fontWeight:400,color:GM,fontSize:8}}>{fl}</small>
+                  width:50,minWidth:50,maxWidth:50,
+                  borderRight:"2px solid #D0DCF0",overflow:"hidden"}}>
+                  Δ Dias
                 </td>
                 {MS.map(m=>{const v=cA(m);return(
                   <td key={m} style={{padding:"7px 2px",textAlign:"center"}}>
@@ -464,7 +466,7 @@ export default function App(){
         </div>
 
         <div style={{marginTop:8,textAlign:"center",fontSize:10,color:GM}}>
-          Clique nas DU's para abrir o calendário visual · ‹ › para navegar
+          Clique nos meses para abrir o calendário visual · ‹ › para navegar · Cabeçalho do mês para ordenar
         </div>
       </div>
     </div>
