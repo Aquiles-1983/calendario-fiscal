@@ -224,10 +224,10 @@ function SummaryPage({fy}){
   const totalMTD=parseFloat(meses.reduce((s,m)=>s+m.mtd,0).toFixed(2));
   const totalCycles=[0,1,2,3,4,5].map(i=>parseFloat(meses.reduce((s,m)=>s+m.cycles[i],0).toFixed(2)));
 
-  const thS={padding:"10px 12px",textAlign:"center",color:"#fff",fontSize:11,
+  const thS={padding:"7px 10px",textAlign:"center",color:"#fff",fontSize:11,
     fontWeight:700,letterSpacing:"0.05em",whiteSpace:"nowrap"};
   const thL={...thS,textAlign:"left"};
-  const tdS={padding:"8px 12px",textAlign:"center",fontSize:12,color:GR,
+  const tdS={padding:"4px 10px",textAlign:"center",fontSize:11.5,color:GR,
     borderBottom:"1px solid #E8EEF8"};
   const tdL={...tdS,textAlign:"left",fontWeight:500};
   const fDU=v=>parseFloat(v).toFixed(2).replace(".",",");
