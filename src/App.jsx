@@ -18,12 +18,12 @@ const FYS=D.map(r=>r.fy);
 const ALL=D.flatMap(r=>MS.map(m=>({fy:r.fy,n:r.n,m,v:r[m]})));
 const q1=r=>r.Abr+r.Mai+r.Jun,q2=r=>r.Jul+r.Ago+r.Set,q3=r=>r.Out+r.Nov+r.Dez,q4=r=>r.Jan+r.Fev+r.Mar;
 const EX=[{k:"Q1",fn:q1,s:1},{k:"Q2",fn:q2},{k:"Q3",fn:q3},{k:"Q4",fn:q4},{k:"H1",fn:r=>q1(r)+q2(r),s:1},{k:"H2",fn:r=>q3(r)+q4(r)}];
-const f2=v=>Number.isInteger(v)?String(v):parseFloat(v.toFixed(2)).toString();
+const f2=v=>parseFloat(v).toFixed(2).replace(".",",");
 const fP=v=>v===null?"—":`${v>=0?"+":""}${v.toFixed(1)}%`;
 const fA=v=>v===null?"—":`${v>=0?"+":""}${f2(parseFloat(v.toFixed(2)))}`;
 const yC=v=>v===null?GM:v>0?G:v<0?R:GM;
 function gV(r,k){const e=EX.find(x=>x.k===k);return e?e.fn(r):k==="T"?r.T:r[k];}
- 
+
 function pascoa(y){
   const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
     f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,
@@ -32,7 +32,7 @@ function pascoa(y){
     mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1;
   return new Date(y,mes-1,dia);
 }
- 
+
 function calcMes(ano,mes){
   const p=pascoa(ano);
   const aD=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
@@ -70,7 +70,7 @@ function calcMes(ano,mes){
   }
   return days;
 }
- 
+
 function Modal({i0,onClose}){
   const[idx,setIdx]=useState(i0);
   const{fy,n,m,v}=ALL[idx];
@@ -91,7 +91,7 @@ function Modal({i0,onClose}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={onClose}>
       <div style={{background:"#F4F6FA",borderRadius:16,overflow:"hidden",maxWidth:460,width:"100%",boxShadow:"0 24px 64px rgba(0,0,0,0.22)",maxHeight:"95vh",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
- 
+
         {/* Header com navegação */}
         <div style={{background:B,padding:"12px 14px",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
           <button onClick={()=>setIdx(i=>Math.max(0,i-1))} disabled={idx===0}
@@ -104,14 +104,14 @@ function Modal({i0,onClose}){
             style={{background:idx<ALL.length-1?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.07)",border:"none",color:"#fff",width:32,height:32,borderRadius:7,cursor:idx<ALL.length-1?"pointer":"default",fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",opacity:idx<ALL.length-1?1:0.3}}>›</button>
           <button onClick={onClose} style={{background:"rgba(255,255,255,0.18)",border:"none",color:"#fff",width:32,height:32,borderRadius:7,cursor:"pointer",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",marginLeft:4}}>✕</button>
         </div>
- 
+
         {/* Cabeçalho dias da semana */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,padding:"10px 10px 4px",background:"#F4F6FA",flexShrink:0}}>
           {DW.map(d=>(
             <div key={d} style={{textAlign:"center",fontSize:11,fontWeight:700,color:d==="Dom"||d==="Sáb"?R:B,padding:"3px 0"}}>{d}</div>
           ))}
         </div>
- 
+
         {/* Grid de dias */}
         <div style={{overflowY:"auto",padding:"3px 10px 14px",flex:1}}>
           {rows.map((row,ri)=>(
@@ -145,8 +145,8 @@ function Modal({i0,onClose}){
     </div>
   );
 }
- 
- 
+
+
 function exportXLSX(sorted,rows,cP,cA,fl){
   const MS2=["Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez","Jan","Fev","Mar"];
   const header=["FY",...MS2,"Total","Q1","Q2","Q3","Q4","H1","H2"];
@@ -173,7 +173,145 @@ function exportXLSX(sorted,rows,cP,cA,fl){
   };
   document.head.appendChild(script);
 }
- 
+
+
+// ── Summary Page ──────────────────────────────────────────────────────────────
+function SummaryPage({fy}){
+  const row=D.find(r=>r.fy===fy)||D[0];
+  const today=new Date();
+  const MES_FULL={Abr:"Abril",Mai:"Maio",Jun:"Junho",Jul:"Julho",Ago:"Agosto",
+    Set:"Setembro",Out:"Outubro",Nov:"Novembro",Dez:"Dezembro",
+    Jan:"Janeiro",Fev:"Fevereiro",Mar:"Março"};
+
+  // Calcula ciclos (janelas de 5 dias corridos) e MTD para cada mês
+  const meses=useMemo(()=>MS.map(m=>{
+    const mn=MN[m];
+    const ano=mn>=4?row.n:row.n+1;
+    const days=calcMes(ano,mn);
+    const tot=new Date(ano,mn,0).getDate();
+
+    // Ciclos: dias 1-5, 6-10, 11-15, 16-20, 21-25, 26-fim
+    const cycles=[0,0,0,0,0,0];
+    days.forEach(({d,v})=>{
+      if(d<=5)       cycles[0]=parseFloat((cycles[0]+v).toFixed(4));
+      else if(d<=10) cycles[1]=parseFloat((cycles[1]+v).toFixed(4));
+      else if(d<=15) cycles[2]=parseFloat((cycles[2]+v).toFixed(4));
+      else if(d<=20) cycles[3]=parseFloat((cycles[3]+v).toFixed(4));
+      else if(d<=25) cycles[4]=parseFloat((cycles[4]+v).toFixed(4));
+      else           cycles[5]=parseFloat((cycles[5]+v).toFixed(4));
+    });
+
+    // MTD: dias passados no mês até hoje
+    const monthStart=new Date(ano,mn-1,1);
+    const monthEnd=new Date(ano,mn,0);
+    let mtd=0;
+    if(today>=monthEnd){
+      // Mês totalmente no passado
+      mtd=row[m];
+    } else if(today>=monthStart){
+      // Mês atual
+      days.forEach(({d,v})=>{
+        const dt=new Date(ano,mn-1,d);
+        if(dt<=today) mtd=parseFloat((mtd+v).toFixed(4));
+      });
+    }
+    // Futuro = 0
+
+    return{m,mn,ano,nome:MES_FULL[m],du:row[m],mtd:parseFloat(mtd.toFixed(2)),cycles:cycles.map(v=>parseFloat(v.toFixed(2)))};
+  }),[row]);
+
+  const totalDU=parseFloat(row.T.toFixed(2));
+  const totalMTD=parseFloat(meses.reduce((s,m)=>s+m.mtd,0).toFixed(2));
+  const totalCycles=[0,1,2,3,4,5].map(i=>parseFloat(meses.reduce((s,m)=>s+m.cycles[i],0).toFixed(2)));
+
+  const thS={padding:"10px 12px",textAlign:"center",color:"#fff",fontSize:11,
+    fontWeight:700,letterSpacing:"0.05em",whiteSpace:"nowrap"};
+  const thL={...thS,textAlign:"left"};
+  const tdS={padding:"8px 12px",textAlign:"center",fontSize:12,color:GR,
+    borderBottom:"1px solid #E8EEF8"};
+  const tdL={...tdS,textAlign:"left",fontWeight:500};
+  const fDU=v=>{
+    const n=parseFloat(v.toFixed(1));
+    const parts=n.toFixed(1).split(".");
+    return parts[0].padStart(2,"0")+","+parts[1];
+  };
+  const fCyc=v=>{
+    const n=parseFloat(v.toFixed(1));
+    return n.toFixed(1).replace(".",",");
+  };
+
+  return(
+    <div style={{padding:"20px 24px",maxWidth:900}}>
+      {/* Título estilo Excel */}
+      <div style={{background:B,borderRadius:"8px 8px 0 0",
+        padding:"14px 20px",display:"flex",alignItems:"center",gap:14,marginBottom:0}}>
+        <div style={{color:"#fff",fontWeight:800,fontSize:18,letterSpacing:"0.04em",
+          textTransform:"uppercase"}}>Summary Calendar · {fy}</div>
+      </div>
+
+      <div style={{borderRadius:"0 0 10px 10px",border:"1px solid #D8E4F0",
+        overflow:"auto",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,
+          fontFamily:"inherit",background:"#fff"}}>
+          <thead>
+            <tr style={{background:B}}>
+              <th style={{...thS,minWidth:56,verticalAlign:"top"}}>DU</th>
+              <th style={{...thS,minWidth:64,verticalAlign:"top"}}>DU MTD</th>
+              <th style={{...thL,minWidth:100,verticalAlign:"top"}}>MÊS</th>
+              <th style={{...thS,verticalAlign:"top"}}>CICLO_5</th>
+              <th style={{...thS,verticalAlign:"top"}}>CICLO_10</th>
+              <th style={{...thS,verticalAlign:"top"}}>CICLO_15</th>
+              <th style={{...thS,verticalAlign:"top"}}>CICLO_20</th>
+              <th style={{...thS,verticalAlign:"top"}}>CICLO_25</th>
+              <th style={{...thS,verticalAlign:"top"}}>CICLO_30</th>
+            </tr>
+          </thead>
+          <tbody>
+            {meses.map((m,ri)=>{
+              const isCurrent=m.mtd>0&&m.mtd<m.du;
+              const bg=isCurrent?"#EBF2FF":ri%2===0?"#fff":"#F7FAFF";
+              return(
+                <tr key={m.m} style={{background:bg}}>
+                  <td style={{...tdS,fontWeight:isCurrent?700:400,
+                    color:isCurrent?B:GR}}>{fDU(m.du)}</td>
+                  <td style={{...tdS,color:m.mtd>0?B:GM,fontWeight:m.mtd>0?600:400}}>
+                    {fDU(m.mtd)}
+                  </td>
+                  <td style={{...tdL,fontWeight:isCurrent?700:500,
+                    color:isCurrent?B:GR}}>{m.nome}</td>
+                  {m.cycles.map((v,i)=>(
+                    <td key={i} style={tdS}>{fCyc(v)}</td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={{background:"#F0F4FA",borderTop:`3px solid ${B}`}}>
+              <td style={{...tdS,fontWeight:800,color:B,fontSize:13}}>{fDU(totalDU)}</td>
+              <td style={{...tdS,fontWeight:700,color:B}}>{fDU(totalMTD)}</td>
+              <td style={{...tdL,fontWeight:800,color:B,fontSize:13}}>FY</td>
+              {totalCycles.map((v,i)=>(
+                <td key={i} style={{...tdS,fontWeight:700,color:B}}>{fCyc(v)}</td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Legenda */}
+      <div style={{marginTop:10,display:"flex",gap:16,flexWrap:"wrap",fontSize:11,color:GM}}>
+        <div style={{display:"flex",alignItems:"center",gap:5}}>
+          <div style={{width:14,height:14,background:"#EBF2FF",border:`1px solid ${B}`,borderRadius:3}}/>
+          Mês atual (em andamento)
+        </div>
+        <div>· CICLO_N = dias úteis nos dias corridos 1-N do mês</div>
+        <div>· DU MTD = dias úteis acumulados até hoje no mês</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App(){
   const[sC,setSC]=useState(null);
   const[sD,setSD]=useState(1);
@@ -181,29 +319,30 @@ export default function App(){
   const[hR,setHR]=useState(null);
   const[anchor,setAnchor]=useState(FYS[0]);
   const[mIdx,setMIdx]=useState(null);
- 
+  const[page,setPage]=useState('calendar');
+
   const rows=useMemo(()=>{
     const i=D.findIndex(r=>r.fy===anchor);
     const start=i<0?0:i;
     return D.slice(start,Math.min(start+6,D.length));
   },[anchor]);
- 
+
   const sorted=useMemo(()=>
     sC?[...rows].sort((a,b)=>(gV(a,sC)-gV(b,sC))*sD):rows
   ,[rows,sC,sD]);
- 
+
   const hs=c=>{if(sC===c)setSD(d=>-d);else{setSC(c);setSD(1);}};
- 
+
   const r0=rows[0];
   const prev=useMemo(()=>{
     const i=D.findIndex(r=>r.fy===r0?.fy);
     return i>0?D[i-1]:null;
   },[r0]);
- 
+
   const cP=k=>{if(!r0||!prev)return null;const c=gV(r0,k),p=gV(prev,k);return p===0?null:((c-p)/p)*100;};
   const cA=k=>{if(!r0||!prev)return null;return parseFloat((gV(r0,k)-gV(prev,k)).toFixed(2));};
   const fl=r0&&prev?`${r0.fy} vs ${prev.fy}`:"—";
- 
+
   // Estilos reutilizáveis
   const thM=(k,sep)=>({
     padding:"10px 4px",textAlign:"center",minWidth:52,cursor:"pointer",userSelect:"none",
@@ -226,7 +365,7 @@ export default function App(){
     padding:"5px 4px",textAlign:"center",
     borderLeft:sep?"2px solid #E0E8F5":"none"
   });
- 
+
   // Célula clicável (meses)
   const celM=(v,fn)=>(
     <div onClick={fn}
@@ -238,7 +377,7 @@ export default function App(){
       {f2(v)}
     </div>
   );
- 
+
   // Célula não-clicável (Total, Q, H)
   const celNM=(v)=>(
     <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",
@@ -247,7 +386,7 @@ export default function App(){
       {f2(v)}
     </div>
   );
- 
+
   return(
     <div style={{minHeight:"100vh",width:"100%",background:"#F0F4FA",fontFamily:"'Inter','Segoe UI',sans-serif",display:"flex",flexDirection:"column"}}>
       <style>{`
@@ -257,9 +396,9 @@ export default function App(){
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-thumb{background:${B};border-radius:3px}
       `}</style>
- 
+
       {mIdx!==null&&<Modal i0={mIdx} onClose={()=>setMIdx(null)}/>}
- 
+
       {/* HEADER */}
       <div style={{background:B,padding:"13px 24px",boxShadow:"0 4px 14px rgba(0,0,0,0.18)"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
@@ -269,19 +408,33 @@ export default function App(){
               Calendário Fiscal - PME
             </h1>
           </div>
-          <button
-            onClick={()=>exportXLSX(sorted,rows,cP,cA,fl)}
-            style={{display:"flex",alignItems:"center",gap:7,background:"rgba(255,255,255,0.15)",
-              border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,
-              padding:"7px 14px",color:"#fff",fontFamily:"inherit",fontSize:12,
-              fontWeight:600,cursor:"pointer",transition:"background .2s"}}
-            onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"}
-            onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>
-            <span style={{fontSize:15}}>⬇</span> Exportar Excel
-          </button>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {/* Tabs */}
+            {[{k:"calendar",l:"Calendário"},{k:"summary",l:"Summary"}].map(t=>(
+              <button key={t.k} onClick={()=>setPage(t.k)}
+                style={{padding:"6px 14px",borderRadius:7,border:"none",fontFamily:"inherit",
+                  fontSize:12,fontWeight:600,cursor:"pointer",transition:"all .2s",
+                  background:page===t.k?"#fff":"rgba(255,255,255,0.15)",
+                  color:page===t.k?B:"#fff"}}>
+                {t.l}
+              </button>
+            ))}
+            {page==="calendar"&&(
+              <button
+                onClick={()=>exportXLSX(sorted,rows,cP,cA,fl)}
+                style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.15)",
+                  border:"1px solid rgba(255,255,255,0.3)",borderRadius:7,
+                  padding:"6px 13px",color:"#fff",fontFamily:"inherit",fontSize:12,
+                  fontWeight:600,cursor:"pointer"}}
+                onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"}
+                onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>
+Exportar
+              </button>
+            )}
+          </div>
         </div>
       </div>
- 
+
       {/* FILTROS */}
       <div style={{background:"#fff",borderBottom:"2px solid #E0E8F5",padding:"9px 24px",boxShadow:"0 2px 6px rgba(0,0,0,0.05)"}}>
         <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
@@ -294,12 +447,11 @@ export default function App(){
               backgroundRepeat:"no-repeat",backgroundPosition:"right 8px center"}}>
             {FYS.map(f=><option key={f} value={f}>{f}</option>)}
           </select>
- 
+
         </div>
       </div>
- 
-      {/* TABELA */}
-      <div style={{flex:1,padding:"12px 24px 18px",overflow:"auto"}}>
+
+      {page==="calendar"&&<div style={{flex:1,padding:"12px 24px 18px",overflow:"auto"}}>
         <div style={{borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.08)",border:"1px solid #D8E4F0",overflow:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:"inherit",background:"#fff"}}>
             <thead>
@@ -309,7 +461,7 @@ export default function App(){
                   letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:700,
                   position:"sticky",left:0,background:B,zIndex:3,width:62,minWidth:62,maxWidth:62,
                   borderRight:"2px solid rgba(255,255,255,0.15)"}}>FY</th>
- 
+
                 {/* Meses — clicáveis para ordenar */}
                 {MS.map(m=>(
                   <th key={m} onClick={()=>hs(m)}
@@ -318,17 +470,17 @@ export default function App(){
                     {m}{sC===m?(sD===1?"↑":"↓"):""}
                   </th>
                 ))}
- 
+
                 {/* Total — não ordenável, não clicável */}
                 <th style={thNM("T",true)}>Total</th>
- 
+
                 {/* Q1-Q4 H1-H2 — não ordenáveis */}
                 {EX.map(e=>(
                   <th key={e.k} style={thNM(e.k,!!e.s)}>{e.k}</th>
                 ))}
               </tr>
             </thead>
- 
+
             <tbody>
               {sorted.map((row,ri)=>{
                 const hr=hR===row.fy;
@@ -338,14 +490,14 @@ export default function App(){
                     onMouseEnter={()=>setHR(row.fy)}
                     onMouseLeave={()=>setHR(null)}
                     style={{background:bg,borderBottom:"1px solid #E8EEF8"}}>
- 
+
                     {/* FY */}
                     <td style={{padding:"7px 10px",fontWeight:700,color:hr?B:GR,fontSize:12,
                       position:"sticky",left:0,zIndex:1,background:bg,width:62,minWidth:62,maxWidth:62,
                       borderRight:"2px solid #E0E8F5",whiteSpace:"nowrap",transition:"color .15s"}}>
                       {row.fy}
                     </td>
- 
+
                     {/* Meses — abre modal */}
                     {MS.map(m=>{
                       const ci=ALL.findIndex(c=>c.fy===row.fy&&c.m===m);
@@ -355,10 +507,10 @@ export default function App(){
                         </td>
                       );
                     })}
- 
+
                     {/* Total — sem modal */}
                     <td style={tdNM(true)}>{celNM(row.T)}</td>
- 
+
                     {/* Q e H — sem modal */}
                     {EX.map(e=>(
                       <td key={e.k} style={tdNM(!!e.s)}>
@@ -369,7 +521,7 @@ export default function App(){
                 );
               })}
             </tbody>
- 
+
             <tfoot>
               {/* YoY % */}
               <tr style={{background:"#EBF2FF",borderTop:`3px solid ${B}`}}>
@@ -394,7 +546,7 @@ export default function App(){
                   </td>
                 );})}
               </tr>
- 
+
               {/* Δ Dias */}
               <tr style={{background:"#F7FAFF"}}>
                 <td style={{padding:"7px 10px",fontSize:9,fontWeight:700,color:B,
@@ -421,11 +573,12 @@ export default function App(){
             </tfoot>
           </table>
         </div>
- 
+
         <div style={{marginTop:8,textAlign:"center",fontSize:10,color:GM}}>
           Clique nos meses para abrir o calendário visual · ‹ › para navegar · Cabeçalho do mês para ordenar
         </div>
-      </div>
+      </div>}
+      {page==="summary"&&<SummaryPage fy={rows[0]?.fy||FYS[0]}/>}
     </div>
   );
 }
