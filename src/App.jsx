@@ -230,11 +230,7 @@ function SummaryPage({fy}){
   const tdS={padding:"8px 12px",textAlign:"center",fontSize:12,color:GR,
     borderBottom:"1px solid #E8EEF8"};
   const tdL={...tdS,textAlign:"left",fontWeight:500};
-  const fDU=v=>{
-    const n=parseFloat(v.toFixed(1));
-    const parts=n.toFixed(1).split(".");
-    return parts[0].padStart(2,"0")+","+parts[1];
-  };
+  const fDU=v=>parseFloat(v).toFixed(2).replace(".",",");
   const fCyc=v=>{
     const n=parseFloat(v.toFixed(1));
     return n.toFixed(1).replace(".",",");
@@ -242,14 +238,7 @@ function SummaryPage({fy}){
 
   return(
     <div style={{padding:"20px 24px",maxWidth:900}}>
-      {/* Título estilo Excel */}
-      <div style={{background:B,borderRadius:"8px 8px 0 0",
-        padding:"14px 20px",display:"flex",alignItems:"center",gap:14,marginBottom:0}}>
-        <div style={{color:"#fff",fontWeight:800,fontSize:18,letterSpacing:"0.04em",
-          textTransform:"uppercase"}}>Summary Calendar · {fy}</div>
-      </div>
-
-      <div style={{borderRadius:"0 0 10px 10px",border:"1px solid #D8E4F0",
+      <div style={{borderRadius:10,border:"1px solid #D8E4F0",
         overflow:"auto",boxShadow:"0 4px 20px rgba(0,0,0,0.08)"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,
           fontFamily:"inherit",background:"#fff"}}>
